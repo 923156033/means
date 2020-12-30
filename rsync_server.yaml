@@ -1,0 +1,27 @@
+- hosts: 172.16.1.41
+  tasks:
+    - name: 01-install rsync
+      yum: name=rsync state=installed
+    - name: 02-push con file
+      copy: src=/etc/ansible/server_file/rsync_server/rsyncd.conf dest=/etc/
+    - name: 03-creat user
+      user: name=rsync create_home=no shell=/sbin/nologin
+    - name: 04-mkdir directory
+      file: path=/backup state=directory owner=rsync group=rsync
+    - name: 05-create password file
+      copy:
+        content: "rsync_backup:ygg1461447954"
+        dest: /etc/rsync.passwd
+        mode: 600
+    - name: 06-start server
+      server: name=rsyncd state=started enabled=yes
+- hosts: 172.16.1.31,172.16.1.7
+  tasks:
+    - name: 01-install rsync
+      yum: name=rsync state=installed
+    - name: 02-create password file
+      copy: content=ygg1461447954 dest=/etc/rsync.passwd mode=600
+    - name: 03-create test file
+      file: dest=/tmp/test.txt state=touch
+    - name: 04-check test.txt
+      shell: rsync -avz /tmp/test.txt rsync_backup@172.16.1.41::backup --password-file=rsync.password
